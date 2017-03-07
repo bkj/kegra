@@ -35,7 +35,6 @@ class GraphInputLayer(Layer):
 
         self.trainable_weights = []
         self.non_trainable_weights = []
-        self.regularizers = []
         self.constraints = {}
 
         self.sparse = sparse
@@ -119,27 +118,35 @@ class GraphConvolution(Layer):
         assert len(features_shape) == 2
         self.input_dim = features_shape[1]
 
-        self.W = self.init((self.input_dim * self.support, self.output_dim),
-                           name='{}_W'.format(self.name))
+        self.W = self.add_weight(
+          (self.input_dim * self.support, self.output_dim),
+          initializer=self.init,
+          regularizer=self.W_regularizer,
+          name='{}_W'.format(self.name)
+        )
+        
         if self.bias:
-            self.b = K.zeros((self.output_dim,),
-                             name='{}_b'.format(self.name))
+            self.b = self.add_weight((self.output_dim,),
+                                     initializer='zero',
+                                     name='{}_b'.format(self.name),
+                                     regularizer=self.b_regularizer)
+            
             self.trainable_weights = [self.W, self.b]
         else:
             self.trainable_weights = [self.W]
 
-        self.regularizers = []
-        if self.W_regularizer:
-            self.W_regularizer.set_param(self.W)
-            self.regularizers.append(self.W_regularizer)
+        # self.regularizers = []
+        # if self.W_regularizer:
+        #     self.W_regularizer.set_param(self.W)
+        #     self.regularizers.append(self.W_regularizer)
 
-        if self.bias and self.b_regularizer:
-            self.b_regularizer.set_param(self.b)
-            self.regularizers.append(self.b_regularizer)
+        # if self.bias and self.b_regularizer:
+        #     self.b_regularizer.set_param(self.b)
+        #     self.regularizers.append(self.b_regularizer)
 
-        if self.initial_weights is not None:
-            self.set_weights(self.initial_weights)
-            del self.initial_weights
+        # if self.initial_weights is not None:
+        #     self.set_weights(self.initial_weights)
+        #     del self.initial_weights
 
     def call(self, inputs, mask=None):
         features = inputs[0]
